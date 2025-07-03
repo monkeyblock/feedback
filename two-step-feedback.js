@@ -27,9 +27,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // Step 1: Reason Selection
 function setupReasonCards() {
     const cards = document.querySelectorAll('.reason-card');
-    const continueBtn = document.getElementById('continueBtn');
     const missingFeatureInput = document.getElementById('missingFeatureInput');
+    const somethingElseInput = document.getElementById('somethingElseInput');
+    const technicalIssueInput = document.getElementById('technicalIssueInput');
     const quickFeatureField = document.getElementById('quickFeature');
+    const quickOtherField = document.getElementById('quickOther');
+    const quickIssueField = document.getElementById('quickIssue');
+    
+    // Button references
+    const featureBtn = document.getElementById('featureSkipBtn');
+    const issueBtn = document.getElementById('issueSkipBtn');
+    const otherBtn = document.getElementById('otherSkipBtn');
+    
+    // Setup input listeners for button transformation
+    setupInputButton(quickFeatureField, featureBtn, 'feature');
+    setupInputButton(quickIssueField, issueBtn, 'issue');
+    setupInputButton(quickOtherField, otherBtn, 'other');
     
     cards.forEach(card => {
         card.addEventListener('click', function() {
@@ -39,30 +52,48 @@ function setupReasonCards() {
             // Add selection
             this.classList.add('selected');
             selectedReason = this.dataset.reason;
-            continueBtn.disabled = false;
             
-            // Show/hide missing feature input
+            // Hide all inputs first
+            missingFeatureInput.style.display = 'none';
+            somethingElseInput.style.display = 'none';
+            technicalIssueInput.style.display = 'none';
+            
+            // Reset all buttons to Skip
+            [featureBtn, issueBtn, otherBtn].forEach(btn => {
+                btn.textContent = 'Skip';
+                btn.className = 'input-btn skip-btn';
+                btn.onclick = skipToStep2;
+            });
+            
+            // Show/hide specific inputs
             if (selectedReason === 'missing-feature') {
-                missingFeatureInput.style.display = 'block';
+                missingFeatureInput.style.display = 'flex';
                 quickFeatureField.focus();
-                
-                // Auto-save feature request as user types
-                quickFeatureField.addEventListener('input', debounce(function() {
-                    feedbackData.missingFeature = this.value;
-                    saveDraft();
-                    
-                    // Send immediately if they typed something substantial
-                    if (this.value.length > 5) {
-                        sendQuickFeedback('missing_feature_typed', {
-                            feature: this.value
-                        });
-                    }
-                }, 1000));
+                quickFeatureField.value = feedbackData.missingFeature || '';
+                if (quickFeatureField.value) {
+                    transformToSendButton(featureBtn);
+                }
+            } else if (selectedReason === 'something-else') {
+                somethingElseInput.style.display = 'flex';
+                quickOtherField.focus();
+                quickOtherField.value = feedbackData.otherReason || '';
+                if (quickOtherField.value) {
+                    transformToSendButton(otherBtn);
+                }
+            } else if (selectedReason === 'bugs') {
+                technicalIssueInput.style.display = 'flex';
+                quickIssueField.focus();
+                quickIssueField.value = feedbackData.technicalIssue || '';
+                if (quickIssueField.value) {
+                    transformToSendButton(issueBtn);
+                }
             } else {
-                missingFeatureInput.style.display = 'none';
+                // For other reasons, go directly to step 2
+                setTimeout(() => goToStep2(), 300);
             }
             
             // Animate monkey
+            document.getElementById('monkeyIcon').classList.remove('sad');
             document.getElementById('monkeyIcon').classList.add('happy');
             
             // Store reason immediately (in case user leaves)
@@ -71,6 +102,49 @@ function setupReasonCards() {
             sendTelemetry('reason_selected', { reason: selectedReason });
         });
     });
+}
+
+// Setup input field with button transformation
+function setupInputButton(inputField, button, type) {
+    inputField.addEventListener('input', function() {
+        if (this.value.trim().length > 0) {
+            transformToSendButton(button);
+            
+            // Save data
+            if (type === 'feature') {
+                feedbackData.missingFeature = this.value;
+            } else if (type === 'issue') {
+                feedbackData.technicalIssue = this.value;
+            } else if (type === 'other') {
+                feedbackData.otherReason = this.value;
+            }
+            
+            saveDraft();
+            
+            // Send quick feedback after a bit of typing
+            if (this.value.length > 3) {
+                const eventType = type === 'feature' ? 'missing_feature_typed' : 
+                                 type === 'issue' ? 'technical_issue_typed' : 
+                                 'other_reason_typed';
+                sendQuickFeedback(eventType, { [type]: this.value });
+            }
+        } else {
+            // Transform back to Skip if empty
+            button.textContent = 'Skip';
+            button.className = 'input-btn skip-btn';
+            button.onclick = skipToStep2;
+        }
+    });
+}
+
+// Transform button to Send
+function transformToSendButton(button) {
+    button.textContent = 'Send';
+    button.className = 'input-btn send-btn';
+    button.onclick = function() {
+        saveDraft();
+        goToStep2();
+    };
 }
 
 // Go to Step 2
@@ -83,23 +157,38 @@ function goToStep2() {
     // Update UI
     document.getElementById('step1').style.display = 'none';
     document.getElementById('step2').style.display = 'block';
-    document.getElementById('headerTitle').textContent = 'Almost done! 🎯';
-    document.getElementById('headerSubtitle').textContent = 'Your details help us improve (optional)';
-    updateProgress(66);
+    document.getElementById('headerTitle').textContent = 'One more thing... 💭';
     
     // Focus on textarea
     document.getElementById('feedback').focus();
 }
 
-// Skip functions
-function skipFeedback() {
-    sendTelemetry('skipped_at_step1');
-    showThankYou();
+// Skip directly to step 2
+function skipToStep2() {
+    goToStep2();
 }
 
-function skipDetails() {
-    sendQuickFeedback('step2_skipped');
-    showThankYou();
+// Show thank you
+function showThankYou() {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('thankYou').style.display = 'block';
+    
+    // Confetti effect (optional)
+    if (typeof confetti !== 'undefined') {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    }
+    
+    // Close after 5 seconds
+    setTimeout(() => {
+        if (window.close) {
+            window.close();
+        }
+    }, 5000);
 }
 
 // Step 2: Form submission
@@ -153,6 +242,8 @@ async function sendQuickFeedback(stage) {
 // Send full feedback
 async function sendFullFeedback() {
     const missingFeature = document.getElementById('quickFeature')?.value || feedbackData.missingFeature;
+    const otherReason = document.getElementById('quickOther')?.value || feedbackData.otherReason;
+    const technicalIssue = document.getElementById('quickIssue')?.value || feedbackData.technicalIssue;
     
     const data = {
         access_key: WEB3FORMS_ACCESS_KEY,
@@ -162,6 +253,8 @@ async function sendFullFeedback() {
         // Main data
         reason: selectedReason,
         missing_feature: missingFeature || '',
+        other_reason: otherReason || '',
+        technical_issue: technicalIssue || '',
         detailed_feedback: feedbackData.feedback || 'No details provided',
         user_email: feedbackData.email || 'Not provided',
         
@@ -175,6 +268,8 @@ COMPLETE UNINSTALL FEEDBACK:
 
 PRIMARY REASON: ${selectedReason}
 ${missingFeature ? `MISSING FEATURE: ${missingFeature}` : ''}
+${technicalIssue ? `TECHNICAL ISSUE: ${technicalIssue}` : ''}
+${otherReason ? `OTHER REASON: ${otherReason}` : ''}
 
 DETAILED FEEDBACK:
 ${feedbackData.feedback || 'No additional details provided'}
@@ -184,7 +279,7 @@ USER EMAIL: ${feedbackData.email || 'Not provided'}
 METADATA:
 - Extension Version: ${feedbackData.version}
 - Submitted: ${new Date().toLocaleString()}
-- Form Type: Two-Step Process
+- Form Type: Two-Step Process (Simplified)
         `.trim()
     };
     
@@ -236,10 +331,8 @@ function showThankYou() {
     }, 5000);
 }
 
-// Update progress bar
-function updateProgress(percent) {
-    document.getElementById('progressBar').style.width = percent + '%';
-}
+// Remove progress bar function
+// function updateProgress(percent) - removed
 
 // Auto-save draft (optional enhancement)
 let draftTimer;
@@ -278,6 +371,8 @@ function saveDraft() {
     const draftData = {
         reason: selectedReason,
         missingFeature: feedbackData.missingFeature || '',
+        otherReason: feedbackData.otherReason || '',
+        technicalIssue: feedbackData.technicalIssue || '',
         feedback: document.getElementById('feedback')?.value || '',
         email: document.getElementById('email')?.value || '',
         timestamp: Date.now(),
