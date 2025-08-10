@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Block - Quick Feedback</title>
+    <style>
+        :root {
+            --primary: #7a9b8e;
+            --primary-hover: #6a8b7e;
+            --primary-light: rgba(122, 155, 142, 0.1);
+            --secondary: #a08776;
+            --background: #f8f6f2;
+            --card: #ffffff;
+            --text: #6b4e3d;
+            --text-dark: #5a3e2e;
+            --text-light: #8b6f5d;
+            --shadow: 0 2px 8px rgba(161, 135, 118, 0.1);
+            --shadow-medium: rgba(161, 135, 118, 0.15);
+            --border-color: rgba(212, 165, 116, 0.2);
+            --border-hover: rgba(122, 155, 142, 0.3);
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cdefs%3E%3Cg id='leaf' opacity='0.03'%3E%3Cpath d='M20 10 Q 15 5, 10 10 Q 5 15, 10 20 Q 15 25, 20 20 Q 25 15, 20 10' fill='%23a08776' stroke='%23a08776' stroke-width='0.5'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23leaf' transform='translate(30,40) rotate(25)'/%3E%3Cuse href='%23leaf' transform='translate(80,20) rotate(-45) scale(0.8)'/%3E%3Cuse href='%23leaf' transform='translate(120,60) rotate(70) scale(1.2)'/%3E%3Cuse href='%23leaf' transform='translate(170,30) rotate(-20) scale(0.9)'/%3E%3Cuse href='%23leaf' transform='translate(40,100) rotate(110) scale(0.7)'/%3E%3Cuse href='%23leaf' transform='translate(100,120) rotate(-60) scale(1.1)'/%3E%3Cuse href='%23leaf' transform='translate(150,140) rotate(45) scale(0.85)'/%3E%3Cuse href='%23leaf' transform='translate(20,160) rotate(-30) scale(0.95)'/%3E%3Cuse href='%23leaf' transform='translate(180,180) rotate(90) scale(0.75)'/%3E%3C/svg%3E");
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Header */
+        .header {
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(to bottom, var(--card) 0%, rgba(248, 246, 242, 0.5) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .monkey-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .monkey-icon.sad {
+            filter: grayscale(20%);
+            transform: scale(0.95);
+        }
+
+        .monkey-icon.happy {
+            filter: grayscale(0%);
+            transform: scale(1.05);
+            animation: bounce 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        /* Step 1: Reason Cards */
+        #step1 {
+            padding: 25px;
+        }
+
+        .reasons-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reason-card {
+            background: rgba(248, 246, 242, 0.5);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .reason-card:hover {
+            background: rgba(122, 155, 142, 0.08);
+            transform: translateX(4px);
+            border-color: var(--border-hover);
+        }
+
+        .reason-card.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .reason-card.selected .reason-text {
+            color: white;
+        }
+
+        .reason-emoji {
+            font-size: 26px;
+        }
+
+        .reason-text {
+            flex: 1;
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        /* Feature input */
+        .feature-input {
+            margin: -4px 0 8px 0;
+            padding: 0 20px;
+            animation: slideDown 0.3s ease-out;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quick-input {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(248, 246, 242, 0.5);
+            color: var(--text-dark);
+            font-family: inherit;
+        }
+
+        .quick-input:focus {
+            outline: none;
+            border-color: var(--primary-hover);
+            background: white;
+        }
+
+        .quick-input::placeholder {
+            color: var(--text-light);
+        }
+
+        /* Input buttons */
+        .input-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .skip-btn {
+            background: var(--border-color);
+            color: var(--text-light);
+        }
+
+        .skip-btn:hover {
+            background: rgba(161, 135, 118, 0.2);
+            color: var(--text);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: #f8f6f2;
+            box-shadow: 0 2px 6px var(--shadow-medium);
+        }
+
+        .send-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px var(--shadow-medium);
+        }
+
+        /* Step 2: Details */
+        #step2 {
+            padding: 30px;
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 17px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            resize: vertical;
+            font-family: inherit;
+            min-height: 120px;
+            font-size: 16px;
+            background: rgba(248, 246, 242, 0.5);
+            color: var(--text-dark);
+            transition: all 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(248, 246, 242, 0.5);
+            color: var(--text-dark);
+            transition: all 0.2s;
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #f8f6f2;
+            box-shadow: 0 2px 8px var(--shadow-medium);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow-medium);
+        }
+
+        .btn-primary:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            color: var(--text-light);
+        }
+
+        /* Thank You State */
+        #thankYou {
+            padding: 60px 30px;
+            text-align: center;
+            display: none;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px;
+            }
+            
+            #step1, #step2 {
+                padding: 20px;
+            }
+            
+            .reason-card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <img src="./media/monkey-block.png" alt="Monkey Block" class="monkey-icon sad" id="monkeyIcon">
+            <h1 id="headerTitle">Why are you leaving? 🥺</h1>
+        </div>
+
+        <!-- Step 1: Quick Reason Selection -->
+        <div id="step1">
+            <div class="reasons-grid">
+                <div class="reason-card" data-reason="missing-feature">
+                    <span class="reason-emoji">🔧</span>
+                    <span class="reason-text">Missing a feature</span>
+                </div>
+                <div id="missingFeatureInput" class="feature-input" style="display: none;">
+                    <input type="text" 
+                           id="quickFeature" 
+                           placeholder="Which feature would you like to see?"
+                           class="quick-input">
+                    <button type="button" class="input-btn skip-btn" id="featureSkipBtn" onclick="skipToStep2()">Skip</button>
+                </div>
+                
+                <div class="reason-card" data-reason="confusing">
+                    <span class="reason-emoji">😵</span>
+                    <span class="reason-text">Too complicated</span>
+                </div>
+                
+                <div class="reason-card" data-reason="bugs">
+                    <span class="reason-emoji">🐛</span>
+                    <span class="reason-text">Technical issues</span>
+                </div>
+                <div id="technicalIssueInput" class="feature-input" style="display: none;">
+                    <input type="text" 
+                           id="quickIssue" 
+                           placeholder="What issue did you experience?"
+                           class="quick-input">
+                    <button type="button" class="input-btn skip-btn" id="issueSkipBtn" onclick="skipToStep2()">Skip</button>
+                </div>
+                
+                <div class="reason-card" data-reason="better-alternative">
+                    <span class="reason-emoji">✨</span>
+                    <span class="reason-text">Found better app</span>
+                </div>
+                
+                <div class="reason-card" data-reason="something-else">
+                    <span class="reason-emoji">😕</span>
+                    <span class="reason-text">Something else</span>
+                </div>
+                <div id="somethingElseInput" class="feature-input" style="display: none;">
+                    <input type="text" 
+                           id="quickOther" 
+                           placeholder="What made you uninstall?"
+                           class="quick-input">
+                    <button type="button" class="input-btn skip-btn" id="otherSkipBtn" onclick="skipToStep2()">Skip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Optional Details -->
+        <div id="step2">
+            <form id="detailsForm">
+                <div class="form-group">
+                    <label for="feedback">Anything else you'd like to share?</label>
+                    <textarea id="feedback" name="feedback" 
+                        placeholder="Your feedback helps us improve Monkey Block for everyone..."
+                        rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email (if you want updates when we fix this)</label>
+                    <input type="email" id="email" name="email" 
+                        placeholder="your@email.com">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Send Feedback</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Thank You -->
+        <div id="thankYou">
+            <img src="./media/thumbs-up-monkey.png" alt="Thank you!" class="success-icon">
+            <h1>You're awesome! 🍌</h1>
+            <p style="margin: 20px 0; color: var(--text-light);">
+                Your feedback helps us make Monkey Block better for everyone.
+            </p>
+            <p style="font-weight: 600;">
+                If you ever want to give us another try, we'll be here! 🐵
+            </p>
+        </div>
+    </div>
+
+    <script src="amplitude-feedback.js"></script>
+    <script src="feedback.js"></script>
+</body>
+</html>
