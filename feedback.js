@@ -269,6 +269,16 @@ function showThankYou() {
         });
     }
     
+    // Track Reddit Pixel Event for Uninstall
+    if (typeof rdt !== 'undefined') {
+        rdt('track', 'Custom', {
+            customEventName: 'Extension_Uninstalled',
+            value: 1,
+            currency: 'USD'
+        });
+        console.log('[Reddit] Tracked Extension_Uninstalled event');
+    }
+    
     // Confetti effect (optional)
     if (typeof confetti !== 'undefined') {
         confetti({
